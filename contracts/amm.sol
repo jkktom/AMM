@@ -94,7 +94,7 @@ contract AMM {
 			tokenBAmount --;
 		}
 
-		require(tokenBAmount < tokenBBalance, "Swap Less")
+		require(tokenBAmount < tokenBBalance, "Swap Less");
 	}
 
 	function calculateTokenBSwap(uint256 _tokenBAmount)
@@ -110,7 +110,7 @@ contract AMM {
 			tokenAAmount --;
 		}
 
-		require(tokenAAmount < tokenABalance, "Swap Less")
+		require(tokenAAmount < tokenABalance, "Swap Less");
 	}
 
 	function swapTokenA(uint256 _tokenAAmount)
@@ -157,6 +157,38 @@ contract AMM {
 			tokenBBalance,
 			block.timestamp
 		);
+	}
+
+	function calcuateWithdrawAmount(uint256 _share)
+		public
+		view
+		returns (uint256 tokenAAmount, uint256 tokenBAmount)
+	{
+		require(_share <= totalShares, "too much");
+		tokenAAmount = tokenABalance * _share / totalShares;
+		tokenBAmount = tokenBBalance * _share / totalShares;
+	}
+
+	function withdrawLiquidity(uint256 _share)
+		external
+		returns(uint256 tokenAAmount, uint256 tokenBAmount)
+	{
+		require(
+			_share <= shares[msg.sender],
+			"Less than you have"
+		);
+
+		(tokenAAmount, tokenBAmount) = calcuateWithdrawAmount(_share);
+
+		shares[msg.sender] -= _share;
+		totalShares -= _share;
+
+		tokenABalance -= tokenAAmount;
+		tokenBBalance -= tokenBAmount;
+		K = tokenABalance * tokenBBalance;
+
+		tokenA.transfer(msg.sender, tokenAAmount);
+		tokenB.transfer(msg.sender, tokenBAmount);
 	}
 
 
