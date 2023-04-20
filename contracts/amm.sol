@@ -217,7 +217,7 @@ contract AMM {
 		returns (LiquidityAmounts memory amounts) 
 	{
 		validateShares(_share);
-		amounts = calcuateAmounts(_share);
+		return calculateAmounts(_share);
 	}
 	function calcuateAmounts(uint256 _share) 
 		internal 
