@@ -82,9 +82,10 @@ contract AMM {
         tokenBBalance += amounts.tokenBAmount;
         K = tokenABalance * tokenBBalance;
     }
-    function increaseShares(uint256 share) internal {
+    function increaseShares(uint256 share) internal returns (uint256){
     	shares[msg.sender] += share;
     	totalShares += share;
+	    return share;
     }
 
     
@@ -107,6 +108,9 @@ contract AMM {
 		return amounts;
 	}
 
+
+
+///////////?SWAP
 	function calculateTokenASwap(uint256 _tokenAAmount)
 		public
 		view
