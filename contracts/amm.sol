@@ -45,7 +45,10 @@ contract AMM {
 	        )
 	    );
 	}
-	function depositTokens(LiquidityAmounts memory amounts) internal returns (LiquidityAmounts memory){
+	function depositTokens(LiquidityAmounts memory amounts) 
+		internal 
+		returns (LiquidityAmounts memory)
+	{
 	    bool tokenATransferSuccess = tokenA.transferFrom(msg.sender, address(this), amounts.tokenAAmount);
 	    bool tokenBTransferSuccess = tokenB.transferFrom(msg.sender, address(this), amounts.tokenBAmount);
 
@@ -56,7 +59,10 @@ contract AMM {
 	    );
 	    return amounts;
 	}
-	function calculateShare(LiquidityAmounts memory amounts) internal returns (uint256 share){
+	function calculateShare(LiquidityAmounts memory amounts) 
+		internal 
+		returns (uint256 share)
+	{
     	if (totalShares == 0) {
 			share = 100 * PRECISION;
 		} else {
@@ -179,38 +185,48 @@ contract AMM {
 		);
 	}
 
-	function calcuateWithdrawAmount(uint256 _share)
+////Start withdraw LPing
+
+	function withdrawLiquidity(uint256 _share) external {
+	    LiquidityAmounts memory amounts = calculateWithdrawAmount(_share);
+	    reduceShares(_share);
+	    reduceBalances(_share);
+
+	    tokenA.transfer(msg.sender, amounts.tokenAAmount);
+	    tokenB.transfer(msg.sender, amounts.tokenBAmount);
+	}
+
+	function reduceShares(uint256 _share) internal {
+	    shares[msg.sender] -= _share;
+	    totalShares -= _share;
+	}
+
+	function reduceBalances(uint256 _share) internal {
+	    LiquidityAmounts memory amounts = calculateWithdrawAmount(_share);
+	    tokenABalance -= amounts.tokenAAmount;
+	    tokenBBalance -= amounts.tokenBAmount;
+	    K = tokenABalance * tokenBBalance;
+	}
+	function validateShares(uint256 _share) internal view {
+		require(_share <= totalShares, "exceeds total");
+		require(_share <= shares[msg.sender], "less than yours");
+	}
+	function calculateWithdrawAmount(uint256 _share)
 		public
 		view
-		returns (uint256 tokenAAmount, uint256 tokenBAmount)
+		returns (LiquidityAmounts memory amounts) 
 	{
-		require(_share <= totalShares, "too much");
-		tokenAAmount = tokenABalance * _share / totalShares;
-		tokenBAmount = tokenBBalance * _share / totalShares;
+		validateShares(_share);
+		amounts = calcuateAmounts(_share);
 	}
-
-	function withdrawLiquidity(uint256 _share)
-		external
-		returns(uint256 tokenAAmount, uint256 tokenBAmount)
+	function calcuateAmounts(uint256 _share) 
+		internal 
+		view 
+		returns (LiquidityAmounts memory amounts)
 	{
-		require(
-			_share <= shares[msg.sender],
-			"Less than you have"
-		);
-
-		(tokenAAmount, tokenBAmount) = calcuateWithdrawAmount(_share);
-
-		shares[msg.sender] -= _share;
-		totalShares -= _share;
-
-		tokenABalance -= tokenAAmount;
-		tokenBBalance -= tokenBAmount;
-		K = tokenABalance * tokenBBalance;
-
-		tokenA.transfer(msg.sender, tokenAAmount);
-		tokenB.transfer(msg.sender, tokenBAmount);
+		amounts.tokenAAmount = tokenABalance * _share / totalShares;	
+		amounts.tokenBAmount = tokenBBalance * _share / totalShares;	
 	}
-
 
 
 

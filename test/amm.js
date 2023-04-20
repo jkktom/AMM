@@ -183,8 +183,8 @@ describe('AMM', () => {
       // balance = await token2.balanceOf(investor.address)
       //   console.log(`investor token 2 B : ${balance*1e-18}`)
 
-      console.log(`investor withdraw 40k LP Pool`)
-        await (await amm.connect(investor).withdrawLiquidity(shares(40))).wait()
+      console.log(`investor withdraw 10shares LP Pool`)
+        await (await amm.connect(investor).withdrawLiquidity(shares(10))).wait()
 
       balance = await token1.balanceOf(investor.address)
         console.log(`investor token 1 B : ${balance*1e-18}`)
@@ -207,6 +207,9 @@ describe('AMM', () => {
         console.log(`investor puts 50K LP Pool`)
           await (await amm.connect(investor).addLiquidity(liquidityAmounts)).wait()
 
+        console.log((await amm.shares(deployer.address))*1e-18)
+        console.log((await amm.shares(investor.address))*1e-18)
+        console.log((await amm.totalShares())*1e-18)
             // balance = await token1.balanceOf(investor.address)
             //   console.log(`investor token 1 B : ${balance*1e-18}`)
             // balance = await token2.balanceOf(investor.address)
