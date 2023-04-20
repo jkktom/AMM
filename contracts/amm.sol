@@ -41,7 +41,9 @@ contract AMM {
 	function addLiquidity(LiquidityAmounts memory amounts) external {
 		increaseShares(
 	        calculateShare(
-	            depositTokens(amounts)
+	            increaseBalances(
+	            	depositTokens(amounts)
+	            )
 	        )
 	    );
 	}
@@ -60,7 +62,7 @@ contract AMM {
 	    return amounts;
 	}
 	function calculateShare(LiquidityAmounts memory amounts) 
-		internal 
+		internal view
 		returns (uint256 share)
 	{
     	if (totalShares == 0) {
@@ -74,13 +76,16 @@ contract AMM {
 			);
 			share = shareA;
 		}
-	    increaseBalances(amounts);
 		return share;
     }
-    function increaseBalances(LiquidityAmounts memory amounts) internal {
+    function increaseBalances(LiquidityAmounts memory amounts) 
+    	internal 
+	    returns (LiquidityAmounts memory) 
+    {
         tokenABalance += amounts.tokenAAmount;
         tokenBBalance += amounts.tokenBAmount;
         K = tokenABalance * tokenBBalance;
+	    return amounts;
     }
     function increaseShares(uint256 share) internal returns (uint256){
     	shares[msg.sender] += share;
