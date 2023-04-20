@@ -188,45 +188,58 @@ contract AMM {
 ////Start withdraw LPing
 
 	function withdrawLiquidity(uint256 _share) external {
-	    LiquidityAmounts memory amounts = calculateWithdrawAmount(_share);
-	    reduceShares(_share);
-	    reduceBalances(_share);
-
-	    tokenA.transfer(msg.sender, amounts.tokenAAmount);
-	    tokenB.transfer(msg.sender, amounts.tokenBAmount);
+	    transferTokens(
+	        reduceBalances(
+	            calculateAmounts(
+	            	reduceShares(
+	            		validateShares(_share)
+		           	)
+            	)
+	        )
+	    );
 	}
 
-	function reduceShares(uint256 _share) internal {
+	function reduceShares(uint256 _share) internal returns (uint256) {
 	    shares[msg.sender] -= _share;
 	    totalShares -= _share;
+	    return _share;
 	}
 
-	function reduceBalances(uint256 _share) internal {
-	    LiquidityAmounts memory amounts = calculateWithdrawAmount(_share);
+	function reduceBalances(LiquidityAmounts memory amounts) 
+	    internal 
+	    returns (LiquidityAmounts memory) 
+	{
 	    tokenABalance -= amounts.tokenAAmount;
 	    tokenBBalance -= amounts.tokenBAmount;
 	    K = tokenABalance * tokenBBalance;
+	    return amounts;
 	}
-	function validateShares(uint256 _share) internal view {
+	function validateShares(uint256 _share) internal view returns(uint256){
 		require(_share <= totalShares, "exceeds total");
 		require(_share <= shares[msg.sender], "less than yours");
+	    return _share;
 	}
-	function calculateWithdrawAmount(uint256 _share)
-		public
-		view
-		returns (LiquidityAmounts memory amounts) 
-	{
-		validateShares(_share);
-		return calculateAmounts(_share);
-	}
-	function calcuateAmounts(uint256 _share) 
+	function calculateAmounts(uint256 _share) 
 		internal 
 		view 
 		returns (LiquidityAmounts memory amounts)
 	{
 		amounts.tokenAAmount = tokenABalance * _share / totalShares;	
-		amounts.tokenBAmount = tokenBBalance * _share / totalShares;	
+		amounts.tokenBAmount = tokenBBalance * _share / totalShares;
+	    return amounts;	
 	}
+
+	function transferTokens(LiquidityAmounts memory amounts) internal {
+	    bool tokenATransferSuccess = tokenA.transfer(msg.sender, amounts.tokenAAmount);
+	    bool tokenBTransferSuccess = tokenB.transfer(msg.sender, amounts.tokenBAmount);
+
+	    // Require both transfers to be successful
+	    require(
+	        tokenATransferSuccess && tokenBTransferSuccess,
+	        "Token A or B transfer for withdrawing failed"
+	    );
+	}
+
 
 
 
