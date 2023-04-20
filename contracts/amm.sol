@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./Token.sol";
+// import "./ammHelper.sol";
 
 contract AMM {
 	Token public tokenA;
@@ -15,6 +16,11 @@ contract AMM {
 	uint256 public totalShares;
 	mapping(address => uint256) public shares;
 	uint256 constant PRECISION = 10**18;
+
+	struct LiquidityAmounts {
+		uint256 tokenAAmount;
+		uint256 tokenBAmount;
+	}
 
 	event Swap(
 		address user,
@@ -32,53 +38,67 @@ contract AMM {
 		tokenB = _tokenB;
 	}
 
-	function addLiquidity(uint256 _tokenAAmount, uint256 _tokenBAmount) external {
-		//Deposit Tokens
-		require(
-			tokenA.transferFrom(msg.sender, address(this), _tokenAAmount),
-			"token A LPing failed"
-		);
-		require(
-			tokenB.transferFrom(msg.sender, address(this), _tokenBAmount),
-			"token B LPing failed"
-		);
+	function addLiquidity(LiquidityAmounts memory amounts) external {
+		increaseShares(
+	        calculateShare(
+	            depositTokens(amounts)
+	        )
+	    );
+	}
+	function depositTokens(LiquidityAmounts memory amounts) internal returns (LiquidityAmounts memory){
+	    bool tokenATransferSuccess = tokenA.transferFrom(msg.sender, address(this), amounts.tokenAAmount);
+	    bool tokenBTransferSuccess = tokenB.transferFrom(msg.sender, address(this), amounts.tokenBAmount);
 
-		uint256 share;
-
-		if (totalShares == 0) {
+	    // Require both transfers to be successful
+	    require(
+	        tokenATransferSuccess && tokenBTransferSuccess,
+	        "Token A or B transfer for LPing failed"
+	    );
+	    return amounts;
+	}
+	function calculateShare(LiquidityAmounts memory amounts) internal returns (uint256 share){
+    	if (totalShares == 0) {
 			share = 100 * PRECISION;
 		} else {
-			uint256 shareA = totalShares * _tokenAAmount / tokenABalance;
-			uint256 shareB = totalShares * _tokenBAmount / tokenBBalance;
+			uint256 shareA = totalShares * amounts.tokenAAmount / tokenABalance;
+			uint256 shareB = totalShares * amounts.tokenBAmount / tokenBBalance;
 			require(
 				(shareA / 1000) == (shareB / 1000),
 				"provide equal tokens"
 			);
 			share = shareA;
 		}
+	    increaseBalances(amounts);
+		return share;
+    }
+    function increaseBalances(LiquidityAmounts memory amounts) internal {
+        tokenABalance += amounts.tokenAAmount;
+        tokenBBalance += amounts.tokenBAmount;
+        K = tokenABalance * tokenBBalance;
+    }
+    function increaseShares(uint256 share) internal {
+    	shares[msg.sender] += share;
+    	totalShares += share;
+    }
 
-		tokenABalance += _tokenAAmount;
-		tokenBBalance += _tokenBAmount;
-		K = tokenABalance * tokenBBalance;
-
-		totalShares += share;
-		shares[msg.sender] += share;
-	}
-
-	function calculateTokenADeposit(uint256 _tokenBAmount)
+    
+	function calculateTokenDeposit(uint256 _inputAmount, address _token)
 		public
 		view
-		returns (uint256 tokenAAmount)
+		returns (LiquidityAmounts memory)
 	{
-		tokenAAmount = _tokenBAmount * tokenABalance / tokenBBalance;
-	}
+		LiquidityAmounts memory amounts;
 
-	function calculateTokenBDeposit(uint256 _tokenAAmount)
-		public
-		view
-		returns (uint256 tokenBAmount)
-	{
-		tokenBAmount = _tokenAAmount * tokenBBalance / tokenABalance;
+		if (_token == address(tokenA)) {
+			amounts.tokenAAmount = _inputAmount;
+			amounts.tokenBAmount = _inputAmount * tokenBBalance / tokenABalance;
+		} else if (_token == address(tokenB)) {
+			amounts.tokenBAmount = _inputAmount;
+			amounts.tokenAAmount = _inputAmount * tokenABalance / tokenBBalance;
+		} else {
+			revert("Invalid token type");
+		}
+		return amounts;
 	}
 
 	function calculateTokenASwap(uint256 _tokenAAmount)
@@ -190,6 +210,8 @@ contract AMM {
 		tokenA.transfer(msg.sender, tokenAAmount);
 		tokenB.transfer(msg.sender, tokenBAmount);
 	}
+
+
 
 
 
