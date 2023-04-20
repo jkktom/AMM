@@ -38,15 +38,15 @@ contract AMM {
 		tokenB = _tokenB;
 	}
 
-	function addLiquidity1(LiquidityAmounts memory amounts) external {
-		increaseShares(
-	        calculateShare(
-	            increaseBalances(
-	            	depositTokens(amounts)
-	            )
-	        )
-	    );
-	}
+	// function addLiquidity1(LiquidityAmounts memory amounts) external {
+	// 	increaseShares(
+	//         calculateShare(
+	//             increaseBalances(
+	//             	depositTokens(amounts)
+	//             )
+	//         )
+	//     );
+	// }
 	// function depositTokens(LiquidityAmounts memory amounts) 
 	// 	internal 
 	// 	returns (LiquidityAmounts memory)
