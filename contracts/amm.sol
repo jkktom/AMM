@@ -8,6 +8,8 @@ import "./Token.sol";
 contract AMM {
 	Token public tokenA;
 	Token public tokenB;
+	Token public tokenSubmit;
+	Token public tokenDispense;
 
 	uint256 public tokenABalance;
 	uint256 public tokenBBalance;
@@ -22,11 +24,18 @@ contract AMM {
 		uint256 tokenBAmount;
 	}
 
+	struct TokenBalances {
+	    uint256 tokenABalance;
+	    uint256 tokenBBalance;
+	}
+
+	TokenBalances public poolBalances;
+
 	event Swap(
-		address user,
-		address tokenSubmit,
+		address indexed user,
+		address indexed tokenSubmit,
 		uint256 tokenSubmitAmount,
-		address tokenDispense,
+		address indexed tokenDispense,
 		uint256 tokenDispenseAmount,
 		uint256 tokenABalance,
 		uint256 tokenBBalance,
@@ -37,30 +46,16 @@ contract AMM {
 		tokenA = _tokenA;
 		tokenB = _tokenB;
 	}
+	
+	//Adding liquidity to the pool
+	function addLiquidity(LiquidityAmounts memory amounts) external {
+	    transferTokens(amounts, true);
+	    updateBalances(amounts, true);
+	    uint256 share = calculateShare(amounts);
+	    updateShares(share, true);
+	}
 
-	// function addLiquidity1(LiquidityAmounts memory amounts) external {
-	// 	increaseShares(
-	//         calculateShare(
-	//             increaseBalances(
-	//             	depositTokens(amounts)
-	//             )
-	//         )
-	//     );
-	// }
-	// function depositTokens(LiquidityAmounts memory amounts) 
-	// 	internal 
-	// 	returns (LiquidityAmounts memory)
-	// {
-	//     bool tokenATransferSuccess = tokenA.transferFrom(msg.sender, address(this), amounts.tokenAAmount);
-	//     bool tokenBTransferSuccess = tokenB.transferFrom(msg.sender, address(this), amounts.tokenBAmount);
 
-	//     // Require both transfers to be successful
-	//     require(
-	//         tokenATransferSuccess && tokenBTransferSuccess,
-	//         "Token A or B transfer for LPing failed"
-	//     );
-	//     return amounts;
-	// }
 	function calculateShare(LiquidityAmounts memory amounts) 
 		internal view
 		returns (uint256 share)
@@ -78,192 +73,6 @@ contract AMM {
 		}
 		return share;
     }
-    // function increaseBalances(LiquidityAmounts memory amounts) 
-    // 	internal 
-	//     returns (LiquidityAmounts memory) 
-    // {
-    //     tokenABalance += amounts.tokenAAmount;
-    //     tokenBBalance += amounts.tokenBAmount;
-    //     K = tokenABalance * tokenBBalance;
-	//     return amounts;
-    // }
-    // function increaseShares(uint256 share) internal returns (uint256){
-    // 	shares[msg.sender] += share;
-    // 	totalShares += share;
-	//     return share;
-    // }
-
-    
-	function calculateTokenDeposit(uint256 _inputAmount, address _token)
-		public
-		view
-		returns (LiquidityAmounts memory)
-	{
-		LiquidityAmounts memory amounts;
-
-		if (_token == address(tokenA)) {
-			amounts.tokenAAmount = _inputAmount;
-			amounts.tokenBAmount = _inputAmount * tokenBBalance / tokenABalance;
-		} else if (_token == address(tokenB)) {
-			amounts.tokenBAmount = _inputAmount;
-			amounts.tokenAAmount = _inputAmount * tokenABalance / tokenBBalance;
-		} else {
-			revert("Invalid token type");
-		}
-		return amounts;
-	}
-
-
-
-///////////?SWAP
-	function calculateTokenASwap(uint256 _tokenAAmount)
-		public
-		view
-		returns (uint256 tokenBAmount)
-	{
-		uint256 tokenAAfter = tokenABalance + _tokenAAmount;
-		uint256 tokenBAfter = K / tokenAAfter;
-		tokenBAmount = tokenBBalance - tokenBAfter;
-
-		if(tokenBAmount == tokenBBalance) {
-			tokenBAmount --;
-		}
-
-		require(tokenBAmount < tokenBBalance, "Swap Less");
-	}
-
-	function calculateTokenBSwap(uint256 _tokenBAmount)
-		public
-		view
-		returns (uint256 tokenAAmount)
-	{
-		uint256 tokenBAfter = tokenBBalance + _tokenBAmount;
-		uint256 tokenAAfter = K / tokenBAfter;
-		tokenAAmount = tokenABalance - tokenAAfter;
-
-		if(tokenAAmount == tokenABalance) {
-			tokenAAmount --;
-		}
-
-		require(tokenAAmount < tokenABalance, "Swap Less");
-	}
-
-	function swapTokenA(uint256 _tokenAAmount)
-		external
-		returns(uint256 tokenBAmount)
-	{
-		tokenBAmount = calculateTokenASwap(_tokenAAmount);
-
-		tokenA.transferFrom(msg.sender, address(this), _tokenAAmount);
-		tokenABalance += _tokenAAmount;
-		tokenBBalance -= tokenBAmount;
-		tokenB.transfer(msg.sender, tokenBAmount);
-
-		emit Swap(
-			msg.sender,
-			address(tokenA),
-			_tokenAAmount,
-			address(tokenB),
-			tokenBAmount,
-			tokenABalance,
-			tokenBBalance,
-			block.timestamp
-		);
-	}
-
-	function swapTokenB(uint256 _tokenBAmount)
-		external
-		returns(uint256 tokenAAmount)
-	{
-		tokenAAmount = calculateTokenBSwap(_tokenBAmount);
-
-		tokenB.transferFrom(msg.sender, address(this), _tokenBAmount);
-		tokenBBalance += _tokenBAmount;
-		tokenABalance -= tokenAAmount;
-		tokenA.transfer(msg.sender, tokenAAmount);
-
-		emit Swap(
-			msg.sender,
-			address(tokenB),
-			_tokenBAmount,
-			address(tokenA),
-			tokenAAmount,
-			tokenABalance,
-			tokenBBalance,
-			block.timestamp
-		);
-	}
-
-////Start withdraw LPing
-
-	// function withdrawLiquidity1(uint256 _share) external {
-	//     transferTokens(
-	//         reduceBalances(
-	//             calculateAmounts(
-	//             	reduceShares(
-	//             		validateShares(_share)
-	// 	           	)
-    //         	)
-	//         )
-	//     );
-	// }
-
-	// function reduceShares(uint256 _share) internal returns (uint256) {
-	//     shares[msg.sender] -= _share;
-	//     totalShares -= _share;
-	//     return _share;
-	// }
-
-	// function reduceBalances(LiquidityAmounts memory amounts) 
-	//     internal 
-	//     returns (LiquidityAmounts memory) 
-	// {
-	//     tokenABalance -= amounts.tokenAAmount;
-	//     tokenBBalance -= amounts.tokenBAmount;
-	//     K = tokenABalance * tokenBBalance;
-	//     return amounts;
-	// }
-	function validateShares(uint256 _share) internal view returns(uint256){
-		require(_share <= totalShares, "exceeds total");
-		require(_share <= shares[msg.sender], "less than yours");
-	    return _share;
-	}
-	function calculateAmounts(uint256 _share) 
-		internal 
-		view 
-		returns (LiquidityAmounts memory amounts)
-	{
-		amounts.tokenAAmount = tokenABalance * _share / totalShares;	
-		amounts.tokenBAmount = tokenBBalance * _share / totalShares;
-	    return amounts;	
-	}
-
-	// function transferTokens1(LiquidityAmounts memory amounts) internal {
-	//     bool tokenATransferSuccess = tokenA.transfer(msg.sender, amounts.tokenAAmount);
-	//     bool tokenBTransferSuccess = tokenB.transfer(msg.sender, amounts.tokenBAmount);
-
-	//     // Require both transfers to be successful
-	//     require(
-	//         tokenATransferSuccess && tokenBTransferSuccess,
-	//         "Token A or B transfer for withdrawing failed"
-	//     );
-	// }
-
-	//New Code Here
-	function addLiquidity(LiquidityAmounts memory amounts) external {
-	    transferTokens(amounts, true);
-	    updateBalances(amounts, true);
-	    uint256 share = calculateShare(amounts);
-	    updateShares(share, true);
-	}
-
-	function withdrawLiquidity(uint256 _share) external {
-	    validateShares(_share);
-	    updateShares(_share, false);
-	    LiquidityAmounts memory amounts = calculateAmounts(_share);
-	    updateBalances(amounts, false);
-	    transferTokens(amounts, false);
-	}
 	function updateBalances(LiquidityAmounts memory amounts, bool isAdd) internal {
 	    if (isAdd) {
 	        tokenABalance += amounts.tokenAAmount;
@@ -303,6 +112,144 @@ contract AMM {
 	        "Token A or B transfer failed"
 	    );
 	}
+	function withdrawLiquidity(uint256 _share) external {
+	    validateShares(_share);
+	    updateShares(_share, false);
+	    LiquidityAmounts memory amounts = calculateAmounts(_share);
+	    updateBalances(amounts, false);
+	    transferTokens(amounts, false);
+	}
+	function validateShares(uint256 _share) internal view returns(uint256){
+		require(_share <= totalShares, "exceeds total");
+		require(_share <= shares[msg.sender], "less than yours");
+	    return _share;
+	}
+	function calculateAmounts(uint256 _share) 
+		internal 
+		view 
+		returns (LiquidityAmounts memory amounts)
+	{
+		amounts.tokenAAmount = tokenABalance * _share / totalShares;	
+		amounts.tokenBAmount = tokenBBalance * _share / totalShares;
+	    return amounts;	
+	}
+    
+	function calculateTokenDeposit(uint256 _inputAmount, address _token)
+		public
+		view
+		returns (LiquidityAmounts memory)
+	{
+		LiquidityAmounts memory amounts;
+
+		if (_token == address(tokenA)) {
+			amounts.tokenAAmount = _inputAmount;
+			amounts.tokenBAmount = _inputAmount * tokenBBalance / tokenABalance;
+		} else if (_token == address(tokenB)) {
+			amounts.tokenBAmount = _inputAmount;
+			amounts.tokenAAmount = _inputAmount * tokenABalance / tokenBBalance;
+		} else {
+			revert("Invalid token type");
+		}
+		return amounts;
+	}
+
+
+
+///////////?SWAP
+
+	function swapTokenA(uint256 _tokenAmount)
+	    external
+	    returns(bool isTokenA, uint256 tokenSubmitAmount)
+	{
+	    isTokenA = true;
+	    tokenSubmit = tokenA;
+	    tokenSubmitAmount = _tokenAmount;
+	    tokenDispense = tokenB;
+	    swapTokens(isTokenA, tokenSubmitAmount);
+	}
+	function swapTokenB(uint256 _tokenAmount)
+	    external
+	    returns(bool isTokenA, uint256 tokenSubmitAmount)
+	{
+	    isTokenA = false;
+	    tokenSubmit = tokenB;
+	    tokenSubmitAmount = _tokenAmount;
+	    tokenDispense = tokenA;
+	    swapTokens(isTokenA, tokenSubmitAmount);
+	}
+
+	function swapTokens(bool isTokenA, uint256 tokenSubmitAmount) internal {
+	    (TokenBalances memory newPoolBalances, uint256 dispenseAmount) = calculateDispense(isTokenA, tokenSubmitAmount);
+
+	    tokenSubmit.transferFrom(msg.sender, address(this), tokenSubmitAmount);
+	    tokenDispense.transfer(msg.sender, dispenseAmount);
+
+	    updateTokenBalances(newPoolBalances);
+
+	    emit Swap(
+	        msg.sender,
+	        address(tokenSubmit),
+	        tokenSubmitAmount,
+	        address(tokenDispense),
+	        dispenseAmount,
+	        tokenABalance,
+	        tokenBBalance,
+	        block.timestamp
+	    );
+	}
+	
+
+	function calculateDispense(bool isTokenA , uint256 tokenSubmitAmount) 
+	    internal 
+	    view 
+	    returns (TokenBalances memory newPoolBalances, uint256 dispenseAmount) {
+	    uint256 beforeSwapBalance;
+	    
+	    if (isTokenA) {
+	        newPoolBalances.tokenABalance = tokenABalance + tokenSubmitAmount;
+	        newPoolBalances.tokenBBalance = K / newPoolBalances.tokenABalance;
+	        dispenseAmount = tokenBBalance - newPoolBalances.tokenBBalance;
+	        beforeSwapBalance = tokenBBalance;
+	    } else {
+	        newPoolBalances.tokenBBalance = tokenBBalance + tokenSubmitAmount;
+	        newPoolBalances.tokenABalance = K / newPoolBalances.tokenBBalance;
+	        dispenseAmount = tokenABalance - newPoolBalances.tokenABalance;
+	        beforeSwapBalance = tokenABalance;
+	    }
+
+	    if (dispenseAmount == beforeSwapBalance) {
+	        dispenseAmount--;
+	    }
+	    return (newPoolBalances, dispenseAmount);
+	}
+	function calculateTokenASwap(uint256 _tokenAAmount)
+	    public
+	    view
+	    returns(uint256 dispenseAmount)
+	{
+	    (, dispenseAmount) = calculateDispense(true, _tokenAAmount);
+	    return dispenseAmount;
+	}
+
+
+	function calculateTokenBSwap(uint256 _tokenBAmount)
+	    public
+	    view
+	    returns(uint256 dispenseAmount)
+	{
+	    (, dispenseAmount) = calculateDispense(false, _tokenBAmount);
+	    return dispenseAmount;
+	}
+	
+	function updateTokenBalances(TokenBalances memory newPoolBalances) internal {
+	    tokenABalance = newPoolBalances.tokenABalance;
+	    tokenBBalance = newPoolBalances.tokenBBalance;
+	}
+	
+
+	
+	
+	
 
 
 
