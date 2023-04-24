@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./Token.sol";
-// import "./ammHelper.sol";
 
 contract AMM {
 	Token public tokenA;
 	Token public tokenB;
 	Token public tokenSubmit;
 	Token public tokenDispense;
+	
+
 
 	uint256 public tokenABalance;
 	uint256 public tokenBBalance;
@@ -46,13 +47,85 @@ contract AMM {
 		tokenA = _tokenA;
 		tokenB = _tokenB;
 	}
-	
+	function token1() external view returns (address) {
+        return address(tokenA);
+    }
+	function token2() external view returns (address) {
+        return address(tokenB);
+    }
+	function token1Balance() external view returns (uint256) {
+        return  tokenABalance;
+    }
+	function token2Balance() external view returns (uint256) {
+        return  tokenBBalance;
+    }
+	function addLiquidity(uint256 _token1Amount, uint256 _token2Amount)
+	    external
+	    returns (LiquidityAmounts memory amounts)
+	{
+	    amounts.tokenAAmount = _token1Amount;
+	    amounts.tokenBAmount = _token2Amount;
+	    addLiquidityWith(amounts);
+	}
+	function calculateTokenADeposit(uint256 _tokenBAmount) 
+	    public
+	    view
+	    returns (uint256 tokenAAmount)
+	{
+	    LiquidityAmounts memory amounts = calculateTokenDeposit(_tokenBAmount, address(tokenB));
+	    return amounts.tokenAAmount;
+	}
+
+	function calculateTokenDeposit(uint256 _inputAmount, address _token)
+		public
+		view
+		returns (LiquidityAmounts memory)
+	{
+		LiquidityAmounts memory amounts;
+
+		if (_token == address(tokenA)) {
+			amounts.tokenAAmount = _inputAmount;
+			amounts.tokenBAmount = _inputAmount * tokenBBalance / tokenABalance;
+		} else if (_token == address(tokenB)) {
+			amounts.tokenBAmount = _inputAmount;
+			amounts.tokenAAmount = _inputAmount * tokenABalance / tokenBBalance;
+		} else {
+			revert("Invalid token type");
+		}
+		return amounts;
+	}
+
+	function calculateTokenBDeposit(uint256 _tokenAAmount) 
+	    public
+	    view
+	    returns (uint256 tokenBAmount)
+	{
+	    LiquidityAmounts memory amounts = calculateTokenDeposit(_tokenAAmount, address(tokenA));
+	    return amounts.tokenBAmount;
+	}
+	// Modify to make it run
+	 function calculateToken2Deposit(uint256 _token1Amount)
+        public
+        view
+        returns (uint256 tokenBAmount)
+    {
+        tokenBAmount = calculateTokenBDeposit(_token1Amount);
+        return tokenBAmount;
+    }
+	 function calculateToken1Deposit(uint256 _token2Amount)
+        public
+        view
+        returns (uint256 tokenAAmount)
+    {
+        tokenAAmount = calculateTokenADeposit(_token2Amount);
+        return tokenAAmount;
+    }
 	//Adding liquidity to the pool
-	function addLiquidity(LiquidityAmounts memory amounts) external {
-	    transferTokens(amounts, true);
-	    updateBalances(amounts, true);
+	function addLiquidityWith(LiquidityAmounts memory amounts) internal {
 	    uint256 share = calculateShare(amounts);
+	    transferTokens(amounts, true);
 	    updateShares(share, true);
+	    updateBalances(amounts, true);
 	}
 
 
@@ -112,7 +185,10 @@ contract AMM {
 	        "Token A or B transfer failed"
 	    );
 	}
-	function withdrawLiquidity(uint256 _share) external {
+	
+	//withdraw shares
+
+	function withdrawLiquidity(uint256 _share) internal {
 	    validateShares(_share);
 	    updateShares(_share, false);
 	    LiquidityAmounts memory amounts = calculateAmounts(_share);
@@ -133,33 +209,31 @@ contract AMM {
 		amounts.tokenBAmount = tokenBBalance * _share / totalShares;
 	    return amounts;	
 	}
-    
-	function calculateTokenDeposit(uint256 _inputAmount, address _token)
-		public
-		view
-		returns (LiquidityAmounts memory)
-	{
-		LiquidityAmounts memory amounts;
-
-		if (_token == address(tokenA)) {
-			amounts.tokenAAmount = _inputAmount;
-			amounts.tokenBAmount = _inputAmount * tokenBBalance / tokenABalance;
-		} else if (_token == address(tokenB)) {
-			amounts.tokenBAmount = _inputAmount;
-			amounts.tokenAAmount = _inputAmount * tokenABalance / tokenBBalance;
-		} else {
-			revert("Invalid token type");
-		}
-		return amounts;
+	function removeLiquidity(uint256 _share) external {
+		withdrawLiquidity(_share);
 	}
+    
 
 
 
-///////////?SWAP
-
+/////////// SWAP 
+	function swapToken1(uint256 _token1Amount)
+        external
+        returns(uint256 dispenseAmount)
+    {
+    	(,, dispenseAmount) = swapTokenA(_token1Amount);
+    	return(dispenseAmount);
+    }
+    function swapToken2(uint256 _token2Amount)
+        external
+        returns(uint256 dispenseAmount)
+    {
+    	(,, dispenseAmount) = swapTokenB(_token2Amount);
+    	return(dispenseAmount);
+    }
 	function swapTokenA(uint256 _tokenAmount)
-	    external
-	    returns(bool isTokenA, uint256 tokenSubmitAmount)
+	    internal
+	    returns(bool isTokenA, uint256 tokenSubmitAmount, uint256 dispenseAmount)
 	{
 	    isTokenA = true;
 	    tokenSubmit = tokenA;
@@ -168,8 +242,8 @@ contract AMM {
 	    swapTokens(isTokenA, tokenSubmitAmount);
 	}
 	function swapTokenB(uint256 _tokenAmount)
-	    external
-	    returns(bool isTokenA, uint256 tokenSubmitAmount)
+	    internal
+	    returns(bool isTokenA, uint256 tokenSubmitAmount, uint256 dispenseAmount)
 	{
 	    isTokenA = false;
 	    tokenSubmit = tokenB;
@@ -179,7 +253,8 @@ contract AMM {
 	}
 
 	function swapTokens(bool isTokenA, uint256 tokenSubmitAmount) internal {
-	    (TokenBalances memory newPoolBalances, uint256 dispenseAmount) = calculateDispense(isTokenA, tokenSubmitAmount);
+	    (TokenBalances memory newPoolBalances, uint256 dispenseAmount)
+	    	 = calculateDispense(isTokenA, tokenSubmitAmount);
 
 	    tokenSubmit.transferFrom(msg.sender, address(this), tokenSubmitAmount);
 	    tokenDispense.transfer(msg.sender, dispenseAmount);
@@ -230,8 +305,6 @@ contract AMM {
 	    (, dispenseAmount) = calculateDispense(true, _tokenAAmount);
 	    return dispenseAmount;
 	}
-
-
 	function calculateTokenBSwap(uint256 _tokenBAmount)
 	    public
 	    view
@@ -240,50 +313,25 @@ contract AMM {
 	    (, dispenseAmount) = calculateDispense(false, _tokenBAmount);
 	    return dispenseAmount;
 	}
+	function calculateToken1Swap(uint256 _tokenAAmount)
+	    public
+	    view
+	    returns(uint256 dispenseAmount)
+	{
+	    dispenseAmount = calculateTokenASwap(_tokenAAmount);
+	    return dispenseAmount;
+	}
+	function calculateToken2Swap(uint256 _tokenBAmount)
+	    public
+	    view
+	    returns(uint256 dispenseAmount)
+	{
+	    dispenseAmount = calculateTokenBSwap(_tokenBAmount);
+	    return dispenseAmount;
+	}
 	
 	function updateTokenBalances(TokenBalances memory newPoolBalances) internal {
 	    tokenABalance = newPoolBalances.tokenABalance;
 	    tokenBBalance = newPoolBalances.tokenBBalance;
 	}
-	
-
-	
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
