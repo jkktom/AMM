@@ -10,7 +10,7 @@ import Row from 'react-bootstrap/Row';
 import Spinner from 'react-bootstrap/Spinner';
 import { ethers } from 'ethers'
 
-// import Alert from './Alert'
+import Alert from './Alert'
 
 import {
   swap,
@@ -23,6 +23,7 @@ const Swap = () => {
   const [inputAmount, setInputAmount] = useState(0)
   const [outputAmount, setOutputAmount] = useState(0)
   const [price, setPrice] = useState(0)
+  const [showAlert, setShowAlert] = useState(false)
 
   const provider = useSelector(state => state.provider.connection)
   const account = useSelector(state => state.provider.account)
@@ -30,9 +31,9 @@ const Swap = () => {
     const symbols = useSelector(state => state.tokens.symbols)
     const balances = useSelector(state => state.tokens.balances)
   const amm = useSelector(state => state.amm.contract)
-    // const isSwapping = useSelector(state => state.amm.swapping.isSwapping)
-    // const isSuccess = useSelector(state => state.amm.swapping.isSuccess)
-    // const transactionHash = useSelector(state => state.amm.swapping.transactionHash)
+    const isSwapping = useSelector(state => state.amm.swapping.isSwapping)
+    const isSuccess = useSelector(state => state.amm.swapping.isSuccess)
+    const transactionHash = useSelector(state => state.amm.swapping.transactionHash)
   const dispatch = useDispatch()
 
 
@@ -59,9 +60,10 @@ const Swap = () => {
       setOutputAmount(_token1Amount.toString())
     }
   }
+//Swap Handler
   const swapHandler = async (e) => {
     e.preventDefault()
-    // setShowAlert(false)
+    setShowAlert(false)
       if (inputToken === outputToken) {
         window.alert('Invalid Token Pair')
         return
@@ -74,7 +76,7 @@ const Swap = () => {
     }
     await loadBalances(amm, tokens, account, dispatch)
     await getPrice()
-    // setShowAlert(true)
+    setShowAlert(true)
   }
 
 
@@ -166,18 +168,15 @@ const Swap = () => {
             </Row>
 
             <Row className='my-5'>
-                <Button type='submit'>Swap</Button>
-              {/*{isSwapping ? (
+              {isSwapping ? (
                 <Spinner animation="border" style={{ display: 'block', margin: '0 auto' }} />
-              ): (
-              )}*/}
-
+              ) : (
+                <Button type='submit'>Swap</Button>
+              )}
               <Form.Text muted>
                 Exchange Rate : {price}
               </Form.Text>
             </Row>
-
-            
           </Form>  
         ):(
           <p
@@ -188,6 +187,30 @@ const Swap = () => {
           </p>
         )}
       </Card>
+      {isSwapping ? (
+        <Alert
+          message={'Swap Pending...'}
+          transactionHash={null}
+          variant={'info'}
+          setShowAlert={setShowAlert}
+        />
+      ) : isSuccess && showAlert ? (
+        <Alert
+          message={'Swap Successful'}
+          transactionHash={transactionHash}
+          variant={'success'}
+          setShowAlert={setShowAlert}
+        />
+      ) : !isSuccess && showAlert ? (
+        <Alert
+          message={'Swap Failed'}
+          transactionHash={null}
+          variant={'danger'}
+          setShowAlert={setShowAlert}
+        />
+      ) : (
+        <></>
+      )}
     </div>
   )
 }

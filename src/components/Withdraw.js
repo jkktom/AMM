@@ -8,7 +8,7 @@ import Row from 'react-bootstrap/Row';
 import Spinner from 'react-bootstrap/Spinner';
 import { ethers } from 'ethers'
 
-// import Alert from './Alert'
+import Alert from './Alert'
 
 import {
   removeLiquidity,
