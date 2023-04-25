@@ -10,7 +10,9 @@ import Loading from './Loading';
 import { 
   loadProvider, 
   loadNetwork, 
-  loadAccount
+  loadAccount,
+  loadTokens,
+  loadAMM
 } from '../store/interactions'
 
 // ABIs: Import your contract ABIs here
@@ -24,11 +26,17 @@ function App() {
   const dispatch = useDispatch()
 
   const loadBlockchainData = async () => {
+
     const provider = await loadProvider(dispatch)
     const chainId = await loadNetwork(provider, dispatch)
+
     //Fetch accounts
     await loadAccount(dispatch) 
 
+
+    // Initiate contracts
+    await loadTokens(provider, chainId, dispatch)
+    await loadAMM(provider, chainId, dispatch)
   }
 
   useEffect(() => {
