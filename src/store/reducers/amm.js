@@ -20,7 +20,7 @@ export const amm = createSlice({
 
 export const {
   setContract,
-  sharesLoaded,
+  sharesLoaded
 } = amm.actions;
 
 export default amm.reducer;
