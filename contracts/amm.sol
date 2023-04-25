@@ -120,6 +120,7 @@ contract AMM {
         tokenAAmount = calculateTokenADeposit(_token2Amount);
         return tokenAAmount;
     }
+    
 	//Adding liquidity to the pool
 	function addLiquidityWith(LiquidityAmounts memory amounts) internal {
 	    uint256 share = calculateShare(amounts);
