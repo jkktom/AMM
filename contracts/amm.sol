@@ -253,11 +253,17 @@ contract AMM {
 	    swapTokens(isTokenA, tokenSubmitAmount);
 	}
 
-	function swapTokens(bool isTokenA, uint256 tokenSubmitAmount) internal {
+	function swapTokens(bool isTokenA, uint256 tokenSubmitAmount) public {
 	    (TokenBalances memory newPoolBalances, uint256 dispenseAmount)
 	    	 = calculateDispense(isTokenA, tokenSubmitAmount);
-
-	    tokenSubmit.transferFrom(msg.sender, address(this), tokenSubmitAmount);
+	   	if(isTokenA) {
+	   		tokenSubmit = tokenA;
+		    tokenDispense = tokenB;
+   		} else {
+	   		tokenSubmit = tokenB;
+		    tokenDispense = tokenA;
+	   		}
+	    tokenSubmit.transferFrom(msg.sender, address(this), tokenSubmitAmount); // Fix this
 	    tokenDispense.transfer(msg.sender, dispenseAmount);
 
 	    updateTokenBalances(newPoolBalances);

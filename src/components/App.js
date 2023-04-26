@@ -20,12 +20,6 @@ import {
   loadAMM
 } from '../store/interactions'
 
-// ABIs: Import your contract ABIs here
-// import TOKEN_ABI from '../abis/Token.json'
-
-// Config: Import your network config here
-// import config from '../config.json';
-
 function App() {
 
   const dispatch = useDispatch()
@@ -34,14 +28,15 @@ function App() {
     const provider = await loadProvider(dispatch)
     const chainId = await loadNetwork(provider, dispatch)
 
-    // Reload page when network changes
-    window.ethereum.on('chainChanged', () => {
-      window.location.reload()
-    })
 
     // Fetch current account from Metamask when changed
     window.ethereum.on('accountsChanged', async () => {
       await loadAccount(dispatch)
+    })
+    
+    // Reload page when network changes
+    window.ethereum.on('chainChanged', () => {
+      window.location.reload()
     })
 
     // Initiate contracts

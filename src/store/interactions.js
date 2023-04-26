@@ -93,15 +93,10 @@ export const loadBalances = async (amm, tokens, account, dispatch) => {
 export const swap = async (provider, amm, token, symbol, amount, dispatch) => {
   try {
     dispatch(swapRequest())
-    let transaction
       const signer = await provider.getSigner()
-      transaction = await token.connect(signer).approve(amm.address, amount)
+    let transaction = await token.connect(signer).approve(amm.address, amount)
       await transaction.wait()
-    if (symbol === "DAPP") {
-      transaction = await amm.connect(signer).swapToken1(amount)
-    } else {
-      transaction = await amm.connect(signer).swapToken2(amount)
-    }
+    transaction = await amm.connect(signer).swapTokens(symbol === "DAPP", amount);
     await transaction.wait()
       dispatch(swapSuccess(transaction.hash))
   } catch (error) {

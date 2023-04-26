@@ -59,7 +59,7 @@ const Charts = () => {
               </tr>
             </thead>
             <tbody>
-              {swaps && swaps.map((swap, index) => (
+              {chart.swaps && chart.swaps.map((swap, index) => (
                 <tr key={index}>
                   <td>{swap.hash.slice(0, 5) + '...' + swap.hash.slice(61, 66)}</td>
                   <td>{swap.args.tokenSubmit === tokens[0].address ? symbols[0] : symbols[1]}</td>
@@ -82,34 +82,8 @@ const Charts = () => {
                       )
                   }</td>
                 </tr>
-                ))}
-            </tbody>
-            {/*<tbody>
-              {chart.swaps && chart.swaps.map((swap, index) => (
-                <tr key={index}>
-                  <td>{swap.hash.slice(0, 5) + '...' + swap.hash.slice(61, 66)}</td>
-                  <td>{swap.args.tokenSubmit === tokens[0].address ? symbols[0] : symbols[1]}</td>
-                  <td>{ethers.utils.formatUnits(swap.args.tokenSubmitAmount.toString(), 'ether')}</td>
-                  <td>{swap.args.tokenDispense === tokens[0].address ? symbols[0] : symbols[1]}</td>
-                  <td>{ethers.utils.formatUnits(swap.args.tokenDispenseAmount.toString(), 'ether')}</td>
-                  <td>{swap.args.user.slice(0, 5) + '...' + swap.args.user.slice(38, 42)}</td>
-                  <td>{
-                    new Date(Number(swap.args.timestamp.toString() + '000'))
-                      .toLocaleDateString(
-                        undefined,
-                        {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: 'numeric',
-                          second: 'numeric'
-                        }
-                      )
-                  }</td>
-                </tr>
               ))}
-            </tbody>*/}
+            </tbody>
           </Table>
         </div>
 

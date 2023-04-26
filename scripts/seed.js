@@ -46,19 +46,19 @@ async function main() {
   let transaction
 
   // Send dapp tokens to investor 1
-  transaction = await dapp.connect(deployer).transfer(investor1.address, tokens(10))
+  transaction = await dapp.connect(deployer).transfer(investor1.address, tokens(100))
   await transaction.wait()
 
   // Send usd tokens to investor 2
-  transaction = await usd.connect(deployer).transfer(investor2.address, tokens(10))
+  transaction = await usd.connect(deployer).transfer(investor2.address, tokens(100))
   await transaction.wait()
 
   // Send dapp tokens to investor 3
-  transaction = await dapp.connect(deployer).transfer(investor3.address, tokens(10))
+  transaction = await dapp.connect(deployer).transfer(investor3.address, tokens(100))
   await transaction.wait()
 
   // Send usd tokens to investor 4
-  transaction = await usd.connect(deployer).transfer(investor4.address, tokens(10))
+  transaction = await usd.connect(deployer).transfer(investor4.address, tokens(100))
   await transaction.wait()
 
 
@@ -66,7 +66,7 @@ async function main() {
   // Adding Liquidity
   //
 
-  let amount = tokens(100)
+  let amount = tokens(1000)
 
   console.log(`Fetching AMM...\n`)
 

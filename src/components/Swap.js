@@ -49,13 +49,13 @@ const Swap = () => {
     if (inputToken === 'DAPP') {
       setInputAmount(e.target.value)
         const _token1Amount = ethers.utils.parseUnits(e.target.value, 'ether')
-        const result = await amm.calculateToken1Swap(_token1Amount)
+        const result = await amm.calculateTokenASwap(_token1Amount)
         const _token2Amount = ethers.utils.formatUnits(result.toString(), 'ether')
       setOutputAmount(_token2Amount.toString())
     } else {
       setInputAmount(e.target.value)
         const _token2Amount = ethers.utils.parseUnits(e.target.value, 'ether')
-        const result = await amm.calculateToken2Swap(_token2Amount)
+        const result = await amm.calculateTokenBSwap(_token2Amount)
         const _token1Amount = ethers.utils.formatUnits(result.toString(), 'ether')
       setOutputAmount(_token1Amount.toString())
     }
@@ -69,11 +69,9 @@ const Swap = () => {
         return
       }
     const _inputAmount = ethers.utils.parseUnits(inputAmount, 'ether')
-    if (inputToken === "DAPP") {
-      await swap(provider, amm, tokens[0], inputToken, _inputAmount, dispatch)
-    } else {
-      await swap(provider, amm, tokens[1], inputToken, _inputAmount, dispatch)
-    }
+    const tokenIndex = inputToken === "DAPP" ? 0 : 1;
+    await swap(provider, amm, tokens[tokenIndex], inputToken, _inputAmount, dispatch);
+
     await loadBalances(amm, tokens, account, dispatch)
     await getPrice()
     setShowAlert(true)
@@ -86,9 +84,9 @@ const Swap = () => {
       return
     }
     if (inputToken === 'DAPP') {
-      setPrice(await amm.token2Balance() / await amm.token1Balance())
+      setPrice(await amm.tokenBBalance() / await amm.tokenABalance())
     } else {
-      setPrice(await amm.token1Balance() / await amm.token2Balance())
+      setPrice(await amm.tokenABalance() / await amm.tokenBBalance())
     }
   }
 
