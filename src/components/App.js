@@ -31,17 +31,17 @@ function App() {
   const dispatch = useDispatch()
 
   const loadBlockchainData = async () => {
-
     const provider = await loadProvider(dispatch)
     const chainId = await loadNetwork(provider, dispatch)
+
+    // Reload page when network changes
+    window.ethereum.on('chainChanged', () => {
+      window.location.reload()
+    })
 
     // Fetch current account from Metamask when changed
     window.ethereum.on('accountsChanged', async () => {
       await loadAccount(dispatch)
-    })
-    // Reload page when network changes
-    window.ethereum.on('chainChanged', () => {
-      window.location.reload()
     })
 
     // Initiate contracts

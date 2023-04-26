@@ -15,9 +15,13 @@ import {
 import {
   setContract,
   sharesLoaded,
+  swapsLoaded,
   depositRequest,
   depositSuccess,
   depositFail,
+  withdrawRequest,
+  withdrawSuccess,
+  withdrawFail,
   swapRequest,
   swapSuccess,
   swapFail
@@ -28,11 +32,10 @@ import AMM_ABI from '../abis/AMM.json';
 import config from '../config.json';
 
 export const loadProvider = (dispatch) => {
-	// Initiate provider
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    dispatch(setProvider(provider))
+  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  dispatch(setProvider(provider))
 
-    return provider
+  return provider
 }
 
 export const loadNetwork = async (provider, dispatch) => {
@@ -125,7 +128,37 @@ export const addLiquidity = async (provider, amm, tokens, amounts, dispatch) => 
   }
 }
 
+// ------------------------------------------------------------------------------
+// REMOVE LIQUDITY
+export const removeLiquidity = async (provider, amm, shares, dispatch) => {
+  try {
+    dispatch(withdrawRequest())
 
+    const signer = await provider.getSigner()
+
+    let transaction = await amm.connect(signer).removeLiquidity(shares)
+    await transaction.wait()
+
+    dispatch(withdrawSuccess(transaction.hash))
+  } catch (error) {
+    dispatch(withdrawFail())
+  }
+}
+
+
+// ------------------------------------------------------------------------------
+// LOAD ALL SWAPS
+
+export const loadAllSwaps = async (provider, amm, dispatch) => {
+  const block = await provider.getBlockNumber()
+
+  const swapStream = await amm.queryFilter('Swap', 0, block)
+  const swaps = swapStream.map(event => {
+    return { hash: event.transactionHash, args: event.args }
+  })
+
+  dispatch(swapsLoaded(swaps))
+}
 
 
 
