@@ -115,7 +115,7 @@ export const addLiquidity = async (provider, amm, tokens, amounts, dispatch) => 
       await transaction.wait()
     transaction = await tokens[1].connect(signer).approve(amm.address, amounts[1])
       await transaction.wait()
-    transaction = await amm.connect(signer).addLiquidity(amounts[0], amounts[1])
+    transaction = await amm.connect(signer).addLiquidityWith({tokenAAmount: amounts[0], tokenBAmount: amounts[1]})
       await transaction.wait()
     dispatch(depositSuccess(transaction.hash))
   } catch (error) {

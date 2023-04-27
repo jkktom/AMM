@@ -49,14 +49,14 @@ const Swap = () => {
     if (inputToken === 'DAPP') {
       setInputAmount(e.target.value)
         const _token1Amount = ethers.utils.parseUnits(e.target.value, 'ether')
-        const result = await amm.calculateTokenASwap(_token1Amount)
-        const _token2Amount = ethers.utils.formatUnits(result.toString(), 'ether')
+        const result = await amm.calculateDispense(true, _token1Amount)
+        const _token2Amount = ethers.utils.formatUnits(result[0].toString(), 'ether')
       setOutputAmount(_token2Amount.toString())
     } else {
       setInputAmount(e.target.value)
         const _token2Amount = ethers.utils.parseUnits(e.target.value, 'ether')
-        const result = await amm.calculateTokenBSwap(_token2Amount)
-        const _token1Amount = ethers.utils.formatUnits(result.toString(), 'ether')
+        const result = await amm.calculateDispense(false, _token2Amount)
+        const _token1Amount = ethers.utils.formatUnits(result[0].toString(), 'ether')
       setOutputAmount(_token1Amount.toString())
     }
   }

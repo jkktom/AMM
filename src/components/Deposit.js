@@ -37,13 +37,13 @@ const Deposit = () => {
     if (e.target.id === 'token1') {
       setToken1Amount(e.target.value)
         const _token1Amount = ethers.utils.parseUnits(e.target.value, 'ether')
-        const result = await amm.calculateTokenBDeposit(_token1Amount)
+        const result = await amm.calculateTokenDeposit(true, _token1Amount)
         const _token2Amount = ethers.utils.formatUnits(result.toString(), 'ether')
       setToken2Amount(_token2Amount)
     } else {
       setToken2Amount(e.target.value)
         const _token2Amount = ethers.utils.parseUnits(e.target.value, 'ether')
-        const result = await amm.calculateTokenADeposit(_token2Amount)
+        const result = await amm.calculateTokenDeposit(false, _token2Amount)
         const _token1Amount = ethers.utils.formatUnits(result.toString(), 'ether')
       setToken1Amount(_token1Amount)
     }
